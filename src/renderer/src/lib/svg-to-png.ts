@@ -1,58 +1,36 @@
+import { finalizeSvgForExport, getExportDimensions } from './mermaid-runtime';
+
 const DEFAULT_SCALE = 2;
 
-function getSvgDimensions(svgRoot: SVGSVGElement): { width: number; height: number } {
-  const widthAttr = svgRoot.getAttribute('width');
-  const heightAttr = svgRoot.getAttribute('height');
-  const viewBox = svgRoot.viewBox.baseVal;
-
-  const parsed = (value: string | null): number | null => {
-    if (!value) return null;
-    const n = parseFloat(value);
-    return Number.isFinite(n) && n > 0 ? n : null;
-  };
-
-  const width =
-    parsed(widthAttr) ??
-    (viewBox.width > 0 ? viewBox.width : svgRoot.getBBox().width) ??
-    800;
-  const height =
-    parsed(heightAttr) ??
-    (viewBox.height > 0 ? viewBox.height : svgRoot.getBBox().height) ??
-    600;
-
-  return { width, height };
-}
-
-export async function svgStringToPngBytes(
-  svg: string,
+/**
+ * Rasterize a live rendered <svg> to a PNG byte buffer.
+ *
+ * We serialize the live DOM (which tolerates HTML inside <foreignObject>)
+ * rather than re-parsing via DOMParser('image/svg+xml'), which is strict
+ * XML and rejects constructs like <br/> that mermaid emits for labels.
+ */
+export async function svgElementToPngBytes(
+  live: SVGSVGElement,
   scale: number = DEFAULT_SCALE,
 ): Promise<Uint8Array> {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(svg, 'image/svg+xml');
-  const svgRoot = doc.documentElement as unknown as SVGSVGElement;
-  if (!svgRoot || svgRoot.nodeName !== 'svg') {
-    throw new Error('Rendered output is not a valid SVG');
-  }
+  const serialized = finalizeSvgForExport(live);
+  const { width, height } = getExportDimensions(live);
 
-  svgRoot.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-  const { width, height } = getSvgDimensions(svgRoot);
-
-  const serialized = new XMLSerializer().serializeToString(svgRoot);
   const blob = new Blob([serialized], { type: 'image/svg+xml;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   try {
     const img = new Image();
     img.decoding = 'sync';
-    img.src = url;
     await new Promise<void>((resolve, reject) => {
       img.onload = () => resolve();
       img.onerror = () =>
         reject(new Error('Could not load diagram into canvas'));
+      img.src = url;
     });
 
     const canvas = document.createElement('canvas');
-    canvas.width = Math.ceil(width * scale);
-    canvas.height = Math.ceil(height * scale);
+    canvas.width = Math.max(1, Math.ceil(width * scale));
+    canvas.height = Math.max(1, Math.ceil(height * scale));
     const ctx = canvas.getContext('2d');
     if (!ctx) throw new Error('2D canvas unavailable');
     ctx.fillStyle = '#FFFFFF';

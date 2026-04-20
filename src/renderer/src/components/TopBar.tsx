@@ -35,9 +35,38 @@ export function TopBar({
         aria-pressed={sidebarOpen}
         aria-label="Toggle sidebar"
       >
-        <span className="topbar__toggle-bar" />
-        <span className="topbar__toggle-bar" />
-        <span className="topbar__toggle-bar" />
+        <svg
+          viewBox="0 0 20 20"
+          width="18"
+          height="18"
+          aria-hidden="true"
+          focusable="false"
+        >
+          <rect
+            x="2.5"
+            y="4"
+            width="15"
+            height="12"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+          />
+          <rect
+            x="2.5"
+            y="4"
+            width="5"
+            height="12"
+            className="topbar__toggle-fill"
+          />
+          <line
+            x1="7.5"
+            y1="4"
+            x2="7.5"
+            y2="16"
+            stroke="currentColor"
+            strokeWidth="1.5"
+          />
+        </svg>
       </button>
       <div className="topbar__brand">
         <img src={logo} alt="Kazkazi" />

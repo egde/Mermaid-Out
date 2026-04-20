@@ -50,61 +50,78 @@ export async function renderMermaid(
   }
 }
 
-/**
- * Wrap a mermaid-generated SVG so it stands on its own when saved:
- *  - explicit width/height derived from the viewBox
- *  - white background rect as the first child
- *  - padding around the viewBox so nothing touches the edge
- *
- * Returns the original string if it cannot be parsed.
- */
-export function finalizeSvgForExport(svg: string, padding = 16): string {
-  try {
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(svg, 'image/svg+xml');
-    const root = doc.documentElement;
-    if (root.nodeName !== 'svg') return svg;
+const SVG_NS = 'http://www.w3.org/2000/svg';
 
-    root.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-
-    const vbAttr = root.getAttribute('viewBox');
-    let width = parseFloat(root.getAttribute('width') ?? '');
-    let height = parseFloat(root.getAttribute('height') ?? '');
-
-    if (vbAttr) {
-      const [vx, vy, vw, vh] = vbAttr.split(/\s+/).map(Number);
-      if ([vx, vy, vw, vh].every((n) => Number.isFinite(n))) {
-        const nx = vx - padding;
-        const ny = vy - padding;
-        const nw = vw + padding * 2;
-        const nh = vh + padding * 2;
-        root.setAttribute('viewBox', `${nx} ${ny} ${nw} ${nh}`);
-        if (!Number.isFinite(width) || width <= 0) width = nw;
-        if (!Number.isFinite(height) || height <= 0) height = nh;
-      }
-    }
-
-    if (Number.isFinite(width) && width > 0) {
-      root.setAttribute('width', String(Math.round(width)));
-    }
-    if (Number.isFinite(height) && height > 0) {
-      root.setAttribute('height', String(Math.round(height)));
-    }
-
-    const vbNow = root.getAttribute('viewBox');
-    if (vbNow) {
-      const [vx, vy, vw, vh] = vbNow.split(/\s+/).map(Number);
-      const bg = doc.createElementNS('http://www.w3.org/2000/svg', 'rect');
-      bg.setAttribute('x', String(vx));
-      bg.setAttribute('y', String(vy));
-      bg.setAttribute('width', String(vw));
-      bg.setAttribute('height', String(vh));
-      bg.setAttribute('fill', '#FFFFFF');
-      root.insertBefore(bg, root.firstChild);
-    }
-
-    return new XMLSerializer().serializeToString(root);
-  } catch {
-    return svg;
+function getSvgDimensions(el: SVGSVGElement): {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+} {
+  const vb = el.viewBox?.baseVal;
+  if (vb && vb.width > 0 && vb.height > 0) {
+    return { x: vb.x, y: vb.y, width: vb.width, height: vb.height };
   }
+  const w = parseFloat(el.getAttribute('width') ?? '') || 0;
+  const h = parseFloat(el.getAttribute('height') ?? '') || 0;
+  if (w > 0 && h > 0) return { x: 0, y: 0, width: w, height: h };
+  try {
+    const bbox = el.getBBox();
+    return { x: bbox.x, y: bbox.y, width: bbox.width, height: bbox.height };
+  } catch {
+    return { x: 0, y: 0, width: 800, height: 600 };
+  }
+}
+
+/**
+ * Clone a live rendered <svg>, add a white background rect and a padding
+ * ring around the viewBox, and return a serialized XML string suitable
+ * for saving to disk.
+ *
+ * Works for diagrams that contain HTML (foreignObject + <br/>) because it
+ * operates on the already-parsed live DOM rather than re-parsing the
+ * mermaid output string through a strict XML parser.
+ */
+export function finalizeSvgForExport(
+  live: SVGSVGElement,
+  padding = 16,
+): string {
+  const clone = live.cloneNode(true) as SVGSVGElement;
+  clone.setAttribute('xmlns', SVG_NS);
+  clone.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink');
+
+  const { x, y, width, height } = getSvgDimensions(live);
+  const nx = x - padding;
+  const ny = y - padding;
+  const nw = width + padding * 2;
+  const nh = height + padding * 2;
+
+  clone.setAttribute('viewBox', `${nx} ${ny} ${nw} ${nh}`);
+  clone.setAttribute('width', String(Math.round(nw)));
+  clone.setAttribute('height', String(Math.round(nh)));
+
+  const bg = clone.ownerDocument.createElementNS(SVG_NS, 'rect');
+  bg.setAttribute('x', String(nx));
+  bg.setAttribute('y', String(ny));
+  bg.setAttribute('width', String(nw));
+  bg.setAttribute('height', String(nh));
+  bg.setAttribute('fill', '#FFFFFF');
+  clone.insertBefore(bg, clone.firstChild);
+
+  return new XMLSerializer().serializeToString(clone);
+}
+
+/**
+ * Return the logical pixel dimensions of a rendered diagram (already padded
+ * by finalizeSvgForExport's math so callers can match canvas size).
+ */
+export function getExportDimensions(
+  live: SVGSVGElement,
+  padding = 16,
+): { width: number; height: number } {
+  const { width, height } = getSvgDimensions(live);
+  return {
+    width: Math.max(1, Math.round(width + padding * 2)),
+    height: Math.max(1, Math.round(height + padding * 2)),
+  };
 }

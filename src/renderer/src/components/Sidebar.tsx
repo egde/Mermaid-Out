@@ -122,7 +122,20 @@ export function Sidebar({
           title="Hide sidebar (Ctrl/Cmd+B)"
           aria-label="Hide sidebar"
         >
-          ×
+          <svg
+            viewBox="0 0 20 20"
+            width="14"
+            height="14"
+            aria-hidden="true"
+            focusable="false"
+          >
+            <path
+              d="M12 5 L7 10 L12 15"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+            />
+          </svg>
         </button>
       </header>
       <div className="sidebar__toolbar">

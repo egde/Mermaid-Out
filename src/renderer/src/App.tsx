@@ -6,7 +6,7 @@ import { Divider } from './components/Divider';
 import { StatusBar } from './components/StatusBar';
 import { Sidebar } from './components/Sidebar';
 import { useFileState, basename } from './lib/file-state';
-import { svgStringToPngBytes } from './lib/svg-to-png';
+import { svgElementToPngBytes } from './lib/svg-to-png';
 import { finalizeSvgForExport } from './lib/mermaid-runtime';
 import type {
   MenuEvent,
@@ -40,7 +40,7 @@ export default function App() {
 
   const [splitPx, setSplitPx] = useState<number | null>(null);
   const [status, setStatus] = useState<'ok' | 'warn' | 'empty'>('empty');
-  const lastSvgRef = useRef<string | null>(null);
+  const svgElementRef = useRef<SVGSVGElement | null>(null);
   const workspaceRef = useRef<HTMLDivElement>(null);
 
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(() =>
@@ -163,12 +163,12 @@ export default function App() {
   }, [content, suggestedName, markSaved, folderRoot]);
 
   const handleExportSvg = useCallback(async () => {
-    const svg = lastSvgRef.current;
-    if (!svg) {
+    const el = svgElementRef.current;
+    if (!el) {
       alert('Nothing to export — the preview has no rendered diagram yet.');
       return;
     }
-    const finalized = finalizeSvgForExport(svg);
+    const finalized = finalizeSvgForExport(el);
     const target = suggestedName.replace(/\.(mmd|mermaid)$/i, '') + '.svg';
     const result = await window.api.file.exportSvg(target, finalized);
     if (result.error) {
@@ -177,14 +177,13 @@ export default function App() {
   }, [suggestedName]);
 
   const handleExportPng = useCallback(async () => {
-    const svg = lastSvgRef.current;
-    if (!svg) {
+    const el = svgElementRef.current;
+    if (!el) {
       alert('Nothing to export — the preview has no rendered diagram yet.');
       return;
     }
     try {
-      const finalized = finalizeSvgForExport(svg);
-      const bytes = await svgStringToPngBytes(finalized);
+      const bytes = await svgElementToPngBytes(el);
       const target = suggestedName.replace(/\.(mmd|mermaid)$/i, '') + '.png';
       const result = await window.api.file.exportPng(target, bytes);
       if (result.error) {
@@ -266,8 +265,8 @@ export default function App() {
     handleToggleSidebar,
   ]);
 
-  const handlePreviewRendered = useCallback((svg: string | null) => {
-    lastSvgRef.current = svg;
+  const handlePreviewRendered = useCallback((svg: SVGSVGElement | null) => {
+    svgElementRef.current = svg;
   }, []);
 
   const splitStyle: React.CSSProperties = {};
@@ -313,18 +312,16 @@ export default function App() {
         onExportPng={handleExportPng}
       />
       <div className="shell">
-        {sidebarOpen && (
-          <Sidebar
-            root={folderRoot}
-            files={folderFiles}
-            activePath={fileState.file?.path ?? null}
-            busy={folderBusy}
-            onPickFolder={handlePickFolder}
-            onRefresh={handleRefreshFolder}
-            onSelect={handleSelectFile}
-            onClose={handleToggleSidebar}
-          />
-        )}
+        <Sidebar
+          root={folderRoot}
+          files={folderFiles}
+          activePath={fileState.file?.path ?? null}
+          busy={folderBusy}
+          onPickFolder={handlePickFolder}
+          onRefresh={handleRefreshFolder}
+          onSelect={handleSelectFile}
+          onClose={handleToggleSidebar}
+        />
         <div className="workspace" ref={workspaceRef} style={splitStyle}>
           <section className="pane">
             <div className="pane__header">
@@ -346,7 +343,7 @@ export default function App() {
             <div className="pane__body">
               <Preview
                 source={content}
-                onRendered={handlePreviewRendered}
+                onRenderedElement={handlePreviewRendered}
                 onStatusChange={setStatus}
               />
             </div>
