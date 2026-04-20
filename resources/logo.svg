@@ -1,15 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 64" width="240" height="64">
-  
-  <g fill="#000" font-family="&#39;JetBrains Mono&#39;, ui-monospace, monospace">
-    
-    <rect x="0" y="0" width="4" height="64"></rect>
-    <rect x="0" y="0" width="16" height="4"></rect>
-    <rect x="0" y="60" width="16" height="4"></rect>
-    
-    <rect x="236" y="0" width="4" height="64"></rect>
-    <rect x="224" y="0" width="16" height="4"></rect>
-    <rect x="224" y="60" width="16" height="4"></rect>
-    
-    <text x="120" y="40" text-anchor="middle" font-size="22" font-weight="700" letter-spacing="2">TECH/TEMPLATE</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 64" width="200" height="64">
+  <g fill="#000" font-family="'JetBrains Mono', ui-monospace, monospace">
+    <rect x="0" y="0" width="4" height="64"/>
+    <rect x="0" y="0" width="16" height="4"/>
+    <rect x="0" y="60" width="16" height="4"/>
+
+    <rect x="196" y="0" width="4" height="64"/>
+    <rect x="184" y="0" width="16" height="4"/>
+    <rect x="184" y="60" width="16" height="4"/>
+
+    <text x="100" y="40" text-anchor="middle" font-size="22" font-weight="700" letter-spacing="2">KAZKAZI</text>
   </g>
 </svg>

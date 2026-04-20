@@ -31,6 +31,7 @@ function buildMenu() {
     { label: 'Save As…', accelerator: 'CmdOrCtrl+Shift+S', click: () => sendMenuEvent({ type: 'save-as' }) },
     { type: 'separator' },
     { label: 'Export SVG…', accelerator: 'CmdOrCtrl+E', click: () => sendMenuEvent({ type: 'export-svg' }) },
+    { label: 'Export PNG…', accelerator: 'CmdOrCtrl+Shift+E', click: () => sendMenuEvent({ type: 'export-png' }) },
     { type: 'separator' },
     isMac ? { role: 'close' } : { role: 'quit' },
   ];
@@ -70,6 +71,12 @@ function buildMenu() {
     {
       label: 'View',
       submenu: [
+        {
+          label: 'Toggle sidebar',
+          accelerator: 'CmdOrCtrl+B',
+          click: () => sendMenuEvent({ type: 'toggle-sidebar' }),
+        },
+        { type: 'separator' },
         { role: 'reload' },
         { role: 'forceReload' },
         { role: 'toggleDevTools' },

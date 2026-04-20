@@ -1,8 +1,10 @@
 import { BrowserWindow, dialog, ipcMain } from 'electron';
 import { promises as fs } from 'node:fs';
-import { basename } from 'node:path';
+import { basename, join, relative, sep } from 'node:path';
 import type {
   ConfirmCloseResult,
+  FolderListing,
+  MermaidFileEntry,
   OpenResult,
   SaveResult,
 } from '../types/api';
@@ -13,6 +15,40 @@ const MERMAID_FILTERS = [
 ];
 
 const SVG_FILTERS = [{ name: 'SVG', extensions: ['svg'] }];
+const PNG_FILTERS = [{ name: 'PNG', extensions: ['png'] }];
+
+const MERMAID_EXTS = /\.(mmd|mermaid)$/i;
+const SKIP_DIRS = new Set(['node_modules', '.git', 'out', 'dist', 'release', '.venv', '__pycache__']);
+const MAX_WALK_ENTRIES = 2000;
+
+async function walkMermaidFiles(
+  root: string,
+): Promise<MermaidFileEntry[]> {
+  const out: MermaidFileEntry[] = [];
+  const queue: string[] = [root];
+  while (queue.length > 0 && out.length < MAX_WALK_ENTRIES) {
+    const dir = queue.shift()!;
+    let entries;
+    try {
+      entries = await fs.readdir(dir, { withFileTypes: true });
+    } catch {
+      continue;
+    }
+    for (const entry of entries) {
+      if (entry.name.startsWith('.')) continue;
+      const full = join(dir, entry.name);
+      if (entry.isDirectory()) {
+        if (SKIP_DIRS.has(entry.name)) continue;
+        queue.push(full);
+      } else if (entry.isFile() && MERMAID_EXTS.test(entry.name)) {
+        const rel = relative(root, full).split(sep).join('/');
+        out.push({ path: full, relativePath: rel, name: entry.name });
+      }
+    }
+  }
+  out.sort((a, b) => a.relativePath.localeCompare(b.relativePath));
+  return out;
+}
 
 export function registerIpcHandlers(getWindow: () => BrowserWindow | null) {
   ipcMain.handle('file:open', async (): Promise<OpenResult> => {
@@ -112,6 +148,73 @@ export function registerIpcHandlers(getWindow: () => BrowserWindow | null) {
       });
       const map: ConfirmCloseResult['action'][] = ['save', 'discard', 'cancel'];
       return { action: map[result.response] ?? 'cancel' };
+    },
+  );
+
+  ipcMain.handle(
+    'file:exportPng',
+    async (
+      _e,
+      suggestedName: string,
+      bytes: Uint8Array,
+    ): Promise<SaveResult> => {
+      const win = getWindow();
+      const result = await dialog.showSaveDialog(win ?? undefined!, {
+        title: 'Export diagram as PNG',
+        defaultPath: suggestedName || 'diagram.png',
+        filters: PNG_FILTERS,
+      });
+      if (result.canceled || !result.filePath) {
+        return { canceled: true };
+      }
+      try {
+        await fs.writeFile(result.filePath, Buffer.from(bytes));
+        return { canceled: false, path: result.filePath };
+      } catch (err) {
+        return { canceled: false, error: (err as Error).message };
+      }
+    },
+  );
+
+  ipcMain.handle(
+    'folder:pick',
+    async (): Promise<FolderListing | { canceled: true }> => {
+      const win = getWindow();
+      const result = await dialog.showOpenDialog(win ?? undefined!, {
+        title: 'Open folder',
+        properties: ['openDirectory'],
+      });
+      if (result.canceled || result.filePaths.length === 0) {
+        return { canceled: true };
+      }
+      const root = result.filePaths[0];
+      const files = await walkMermaidFiles(root);
+      return { canceled: false, root, files };
+    },
+  );
+
+  ipcMain.handle(
+    'folder:list',
+    async (_e, root: string): Promise<FolderListing> => {
+      try {
+        await fs.access(root);
+      } catch {
+        return { canceled: false, root, files: [], error: 'Folder not found' };
+      }
+      const files = await walkMermaidFiles(root);
+      return { canceled: false, root, files };
+    },
+  );
+
+  ipcMain.handle(
+    'file:read',
+    async (_e, path: string): Promise<OpenResult> => {
+      try {
+        const content = await fs.readFile(path, 'utf-8');
+        return { canceled: false, file: { path, content } };
+      } catch (err) {
+        return { canceled: false, error: (err as Error).message };
+      }
     },
   );
 

@@ -1,13 +1,31 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { TopBar } from './components/TopBar';
 import { Editor } from './components/Editor';
 import { Preview } from './components/Preview';
 import { Divider } from './components/Divider';
 import { StatusBar } from './components/StatusBar';
+import { Sidebar } from './components/Sidebar';
 import { useFileState, basename } from './lib/file-state';
-import type { MenuEvent } from '../../types/api';
+import { svgStringToPngBytes } from './lib/svg-to-png';
+import { finalizeSvgForExport } from './lib/mermaid-runtime';
+import type {
+  MenuEvent,
+  MermaidFileEntry,
+} from '../../types/api';
 
 const MIN_PANE_PX = 280;
+const LS_SIDEBAR_OPEN = 'mermaid-out:sidebar:open';
+const LS_FOLDER_ROOT = 'mermaid-out:folder:root';
+
+function readBool(key: string, fallback: boolean): boolean {
+  try {
+    const v = localStorage.getItem(key);
+    if (v === null) return fallback;
+    return v === '1';
+  } catch {
+    return fallback;
+  }
+}
 
 export default function App() {
   const {
@@ -25,6 +43,50 @@ export default function App() {
   const lastSvgRef = useRef<string | null>(null);
   const workspaceRef = useRef<HTMLDivElement>(null);
 
+  const [sidebarOpen, setSidebarOpen] = useState<boolean>(() =>
+    readBool(LS_SIDEBAR_OPEN, true),
+  );
+  const [folderRoot, setFolderRoot] = useState<string | null>(() => {
+    try {
+      return localStorage.getItem(LS_FOLDER_ROOT);
+    } catch {
+      return null;
+    }
+  });
+  const [folderFiles, setFolderFiles] = useState<MermaidFileEntry[]>([]);
+  const [folderBusy, setFolderBusy] = useState(false);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(LS_SIDEBAR_OPEN, sidebarOpen ? '1' : '0');
+    } catch {
+      /* ignore */
+    }
+  }, [sidebarOpen]);
+
+  useEffect(() => {
+    try {
+      if (folderRoot) localStorage.setItem(LS_FOLDER_ROOT, folderRoot);
+      else localStorage.removeItem(LS_FOLDER_ROOT);
+    } catch {
+      /* ignore */
+    }
+  }, [folderRoot]);
+
+  useEffect(() => {
+    if (!folderRoot) return;
+    let cancelled = false;
+    setFolderBusy(true);
+    window.api.folder.list(folderRoot).then((listing) => {
+      if (cancelled) return;
+      setFolderFiles(listing.files);
+      setFolderBusy(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [folderRoot]);
+
   const suggestedName = fileState.file
     ? basename(fileState.file.path)
     : 'untitled.mmd';
@@ -35,7 +97,6 @@ export default function App() {
     const result = await window.api.dialog.confirmDiscard(label);
     if (result.action === 'cancel') return false;
     if (result.action === 'discard') return true;
-    // save
     const saved = await handleSave();
     return saved;
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -72,11 +133,15 @@ export default function App() {
     if (result.path) {
       markSaved(result.path, content);
       window.api.notifySaved();
+      if (folderRoot) {
+        const listing = await window.api.folder.list(folderRoot);
+        setFolderFiles(listing.files);
+      }
       return true;
     }
     return false;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fileState.file, content, markSaved]);
+  }, [fileState.file, content, markSaved, folderRoot]);
 
   const handleSaveAs = useCallback(async (): Promise<boolean> => {
     const result = await window.api.file.saveAs(suggestedName, content);
@@ -88,23 +153,81 @@ export default function App() {
     if (result.path) {
       markSaved(result.path, content);
       window.api.notifySaved();
+      if (folderRoot) {
+        const listing = await window.api.folder.list(folderRoot);
+        setFolderFiles(listing.files);
+      }
       return true;
     }
     return false;
-  }, [content, suggestedName, markSaved]);
+  }, [content, suggestedName, markSaved, folderRoot]);
 
-  const handleExport = useCallback(async () => {
+  const handleExportSvg = useCallback(async () => {
     const svg = lastSvgRef.current;
     if (!svg) {
       alert('Nothing to export — the preview has no rendered diagram yet.');
       return;
     }
+    const finalized = finalizeSvgForExport(svg);
     const target = suggestedName.replace(/\.(mmd|mermaid)$/i, '') + '.svg';
-    const result = await window.api.file.exportSvg(target, svg);
+    const result = await window.api.file.exportSvg(target, finalized);
     if (result.error) {
       alert(`Could not export SVG: ${result.error}`);
     }
   }, [suggestedName]);
+
+  const handleExportPng = useCallback(async () => {
+    const svg = lastSvgRef.current;
+    if (!svg) {
+      alert('Nothing to export — the preview has no rendered diagram yet.');
+      return;
+    }
+    try {
+      const finalized = finalizeSvgForExport(svg);
+      const bytes = await svgStringToPngBytes(finalized);
+      const target = suggestedName.replace(/\.(mmd|mermaid)$/i, '') + '.png';
+      const result = await window.api.file.exportPng(target, bytes);
+      if (result.error) {
+        alert(`Could not export PNG: ${result.error}`);
+      }
+    } catch (err) {
+      alert(`Could not export PNG: ${(err as Error).message}`);
+    }
+  }, [suggestedName]);
+
+  const handleToggleSidebar = useCallback(() => {
+    setSidebarOpen((v) => !v);
+  }, []);
+
+  const handlePickFolder = useCallback(async () => {
+    const result = await window.api.folder.pick();
+    if (result.canceled) return;
+    setFolderRoot(result.root);
+    setFolderFiles(result.files);
+  }, []);
+
+  const handleRefreshFolder = useCallback(async () => {
+    if (!folderRoot) return;
+    setFolderBusy(true);
+    const listing = await window.api.folder.list(folderRoot);
+    setFolderFiles(listing.files);
+    setFolderBusy(false);
+  }, [folderRoot]);
+
+  const handleSelectFile = useCallback(
+    async (entry: MermaidFileEntry) => {
+      if (fileState.file?.path === entry.path) return;
+      const ok = await confirmDiscardIfDirty();
+      if (!ok) return;
+      const result = await window.api.file.read(entry.path);
+      if (result.error) {
+        alert(`Could not open file: ${result.error}`);
+        return;
+      }
+      if (result.file) loadFile(result.file);
+    },
+    [confirmDiscardIfDirty, loadFile, fileState.file?.path],
+  );
 
   useEffect(() => {
     const off = window.api.onMenuEvent((event: MenuEvent) => {
@@ -122,12 +245,26 @@ export default function App() {
           void handleSaveAs();
           return;
         case 'export-svg':
-          void handleExport();
+          void handleExportSvg();
+          return;
+        case 'export-png':
+          void handleExportPng();
+          return;
+        case 'toggle-sidebar':
+          handleToggleSidebar();
           return;
       }
     });
     return off;
-  }, [handleNew, handleOpen, handleSave, handleSaveAs, handleExport]);
+  }, [
+    handleNew,
+    handleOpen,
+    handleSave,
+    handleSaveAs,
+    handleExportSvg,
+    handleExportPng,
+    handleToggleSidebar,
+  ]);
 
   const handlePreviewRendered = useCallback((svg: string | null) => {
     lastSvgRef.current = svg;
@@ -151,50 +288,70 @@ export default function App() {
   }, []);
 
   const lines = content.split('\n').length;
-  const chip =
-    status === 'ok'
-      ? { cls: 'chip chip--ok', label: 'OK' }
-      : status === 'warn'
-        ? { cls: 'chip chip--warn', label: 'Syntax error' }
-        : { cls: 'chip', label: 'Idle' };
+  const chip = useMemo(
+    () =>
+      status === 'ok'
+        ? { cls: 'chip chip--ok', label: 'OK' }
+        : status === 'warn'
+          ? { cls: 'chip chip--warn', label: 'Syntax error' }
+          : { cls: 'chip', label: 'Idle' },
+    [status],
+  );
 
   return (
-    <div className="app">
+    <div className={`app${sidebarOpen ? '' : ' app--no-sidebar'}`}>
       <TopBar
         docName={fileState.displayName}
         dirty={fileState.dirty}
+        sidebarOpen={sidebarOpen}
+        onToggleSidebar={handleToggleSidebar}
         onNew={handleNew}
         onOpen={handleOpen}
         onSave={handleSave}
         onSaveAs={handleSaveAs}
-        onExport={handleExport}
+        onExportSvg={handleExportSvg}
+        onExportPng={handleExportPng}
       />
-      <div className="workspace" ref={workspaceRef} style={splitStyle}>
-        <section className="pane">
-          <div className="pane__header">
-            <span className="pane__eyebrow">Source</span>
-            <span className="pane__eyebrow">Mermaid</span>
-          </div>
-          <div className="pane__body">
-            <Editor value={content} onChange={setContent} />
-          </div>
-        </section>
-        <Divider onDrag={handleDrag} />
-        <section className="pane">
-          <div className="pane__header">
-            <span className="pane__eyebrow">Preview</span>
-            <span className="pane__headerchip">
-              <span className={chip.cls}>{chip.label}</span>
-            </span>
-          </div>
-          <div className="pane__body">
-            <Preview
-              source={content}
-              onRendered={handlePreviewRendered}
-              onStatusChange={setStatus}
-            />
-          </div>
-        </section>
+      <div className="shell">
+        {sidebarOpen && (
+          <Sidebar
+            root={folderRoot}
+            files={folderFiles}
+            activePath={fileState.file?.path ?? null}
+            busy={folderBusy}
+            onPickFolder={handlePickFolder}
+            onRefresh={handleRefreshFolder}
+            onSelect={handleSelectFile}
+            onClose={handleToggleSidebar}
+          />
+        )}
+        <div className="workspace" ref={workspaceRef} style={splitStyle}>
+          <section className="pane">
+            <div className="pane__header">
+              <span className="pane__eyebrow">Source</span>
+              <span className="pane__eyebrow">Mermaid</span>
+            </div>
+            <div className="pane__body">
+              <Editor value={content} onChange={setContent} />
+            </div>
+          </section>
+          <Divider onDrag={handleDrag} />
+          <section className="pane">
+            <div className="pane__header">
+              <span className="pane__eyebrow">Preview</span>
+              <span className="pane__headerchip">
+                <span className={chip.cls}>{chip.label}</span>
+              </span>
+            </div>
+            <div className="pane__body">
+              <Preview
+                source={content}
+                onRendered={handlePreviewRendered}
+                onStatusChange={setStatus}
+              />
+            </div>
+          </section>
+        </div>
       </div>
       <StatusBar
         path={fileState.file?.path ?? null}
