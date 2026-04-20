@@ -5,13 +5,21 @@ const api: MermaidOutApi = {
   file: {
     open: () => ipcRenderer.invoke('file:open'),
     read: (path) => ipcRenderer.invoke('file:read', path),
+    readBinary: (path) => ipcRenderer.invoke('file:readBinary', path),
     save: (path, content) => ipcRenderer.invoke('file:save', path, content),
     saveAs: (suggestedName, content) =>
       ipcRenderer.invoke('file:saveAs', suggestedName, content),
     exportSvg: (suggestedName, svg) =>
       ipcRenderer.invoke('file:exportSvg', suggestedName, svg),
-    exportPng: (suggestedName, bytes) =>
-      ipcRenderer.invoke('file:exportPng', suggestedName, bytes),
+    exportPng: (suggestedName, svg, width, height, scale) =>
+      ipcRenderer.invoke(
+        'file:exportPng',
+        suggestedName,
+        svg,
+        width,
+        height,
+        scale,
+      ),
   },
   folder: {
     pick: () => ipcRenderer.invoke('folder:pick'),

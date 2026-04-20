@@ -42,14 +42,14 @@ button {
 
 .shell {
   display: grid;
-  grid-template-columns: 260px 1fr;
+  grid-template-columns: 48px 260px 1fr;
   min-height: 0;
   background: var(--paper);
   transition: grid-template-columns var(--dur-slow) var(--ease);
 }
 
 .app--no-sidebar .shell {
-  grid-template-columns: 0 1fr;
+  grid-template-columns: 48px 0 1fr;
 }
 
 /* ============================================================
@@ -115,38 +115,66 @@ button {
   padding-left: 84px;
 }
 
-/* Sidebar toggle — outlined panel glyph, never filled */
+/* ============================================================
+   Activity bar (VS Code–style left rail)
+   ============================================================ */
 
-.topbar__toggle {
+.activitybar {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: var(--s-2) 0;
+  gap: var(--s-1);
+  border-right: 1px solid var(--ink);
+  background: var(--paper);
   -webkit-app-region: no-drag;
-  display: inline-flex;
+}
+
+.activitybar__btn {
+  position: relative;
+  display: flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  height: 30px;
+  height: 40px;
+  margin: 0 6px;
   padding: 0;
-  border: 1px solid var(--ink);
+  border: 1px solid transparent;
   background: var(--paper);
-  color: var(--ink);
+  color: var(--ink-70);
   cursor: pointer;
-  transition: border-color var(--dur-fast) var(--ease);
+  transition: color var(--dur-fast) var(--ease),
+    background-color var(--dur-fast) var(--ease),
+    border-color var(--dur-fast) var(--ease);
 }
 
-.topbar__toggle:hover {
-  border-width: 2px;
+.activitybar__btn::before {
+  content: '';
+  position: absolute;
+  left: -6px;
+  top: 8px;
+  bottom: 8px;
+  width: 3px;
+  background: transparent;
+  transition: background-color var(--dur-fast) var(--ease);
 }
 
-.topbar__toggle:active {
-  transform: translate(1px, 1px);
+.activitybar__btn:hover {
+  color: var(--ink);
+  background: var(--ink-05);
 }
 
-.topbar__toggle-fill {
-  fill: var(--ink-30);
-  transition: fill var(--dur-med) var(--ease);
+.activitybar__btn--active {
+  color: var(--ink);
+  background: var(--ink-05);
 }
 
-.topbar__toggle--on .topbar__toggle-fill {
-  fill: var(--ink);
+.activitybar__btn--active::before {
+  background: var(--ink);
+}
+
+.activitybar__btn:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: -2px;
 }
 
 /* Smaller button (sidebar toolbar) */
@@ -184,31 +212,8 @@ button {
 .sidebar__header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   padding: 0 var(--s-3);
   border-bottom: 1px solid var(--ink);
-}
-
-.sidebar__hide {
-  -webkit-app-region: no-drag;
-  width: 22px;
-  height: 22px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid var(--ink-30);
-  background: var(--paper);
-  color: var(--ink-70);
-  line-height: 1;
-  cursor: pointer;
-  padding: 0;
-  transition: color var(--dur-fast) var(--ease),
-    border-color var(--dur-fast) var(--ease);
-}
-
-.sidebar__hide:hover {
-  border-color: var(--ink);
-  color: var(--ink);
 }
 
 .sidebar__toolbar {
@@ -254,7 +259,9 @@ button {
 
 .sidebar__file {
   -webkit-app-region: no-drag;
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
   width: 100%;
   text-align: left;
   font: inherit;
@@ -267,7 +274,6 @@ button {
   cursor: pointer;
   white-space: nowrap;
   overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .sidebar__file:hover {
@@ -281,9 +287,20 @@ button {
 }
 
 .sidebar__filename {
-  display: block;
+  flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.sidebar__kind {
+  flex-shrink: 0;
+  font-size: 9px;
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.12em;
+  color: var(--ink-50);
+  border: 1px solid var(--ink-30);
+  padding: 1px 4px;
+  text-transform: uppercase;
 }
 
 .sidebar__empty {
@@ -528,6 +545,43 @@ button {
   font-size: var(--fs-small);
   text-transform: uppercase;
   letter-spacing: var(--tracking-wider);
+}
+
+/* Image viewer */
+
+.preview__stage--image {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  min-height: 100%;
+}
+
+.preview__image {
+  max-width: 100%;
+  height: auto;
+  border: 1px solid var(--ink-15);
+  background: var(--paper);
+}
+
+.pane__closeimg {
+  -webkit-app-region: no-drag;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid var(--ink-30);
+  background: var(--paper);
+  color: var(--ink-70);
+  cursor: pointer;
+  transition: color var(--dur-fast) var(--ease),
+    border-color var(--dur-fast) var(--ease);
+}
+
+.pane__closeimg:hover {
+  color: var(--ink);
+  border-color: var(--ink);
 }
 
 /* ============================================================

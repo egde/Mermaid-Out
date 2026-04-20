@@ -3,8 +3,6 @@ import logo from '../assets/logo.svg';
 interface Props {
   docName: string;
   dirty: boolean;
-  sidebarOpen: boolean;
-  onToggleSidebar: () => void;
   onNew: () => void;
   onOpen: () => void;
   onSave: () => void;
@@ -16,8 +14,6 @@ interface Props {
 export function TopBar({
   docName,
   dirty,
-  sidebarOpen,
-  onToggleSidebar,
   onNew,
   onOpen,
   onSave,
@@ -27,47 +23,6 @@ export function TopBar({
 }: Props) {
   return (
     <header className="topbar">
-      <button
-        type="button"
-        className={`topbar__toggle${sidebarOpen ? ' topbar__toggle--on' : ''}`}
-        onClick={onToggleSidebar}
-        title={`${sidebarOpen ? 'Hide' : 'Show'} sidebar (Ctrl/Cmd+B)`}
-        aria-pressed={sidebarOpen}
-        aria-label="Toggle sidebar"
-      >
-        <svg
-          viewBox="0 0 20 20"
-          width="18"
-          height="18"
-          aria-hidden="true"
-          focusable="false"
-        >
-          <rect
-            x="2.5"
-            y="4"
-            width="15"
-            height="12"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.5"
-          />
-          <rect
-            x="2.5"
-            y="4"
-            width="5"
-            height="12"
-            className="topbar__toggle-fill"
-          />
-          <line
-            x1="7.5"
-            y1="4"
-            x2="7.5"
-            y2="16"
-            stroke="currentColor"
-            strokeWidth="1.5"
-          />
-        </svg>
-      </button>
       <div className="topbar__brand">
         <img src={logo} alt="Kazkazi" />
         <span>Mermaid-Out</span>

@@ -19,20 +19,31 @@ export interface ConfirmCloseResult {
   action: 'save' | 'discard' | 'cancel';
 }
 
-export interface MermaidFileEntry {
+export type FileKind = 'mermaid' | 'png' | 'svg';
+
+export interface FileEntry {
   path: string;
   relativePath: string;
   name: string;
+  kind: FileKind;
 }
+
+/** @deprecated — use FileEntry instead. */
+export type MermaidFileEntry = FileEntry;
 
 export interface FolderListing {
   canceled: false;
   root: string;
-  files: MermaidFileEntry[];
+  files: FileEntry[];
   error?: string;
 }
 
 export type PickFolderResult = FolderListing | { canceled: true };
+
+export interface ReadBinaryResult {
+  bytes?: Uint8Array;
+  error?: string;
+}
 
 export type MenuEvent =
   | { type: 'new' }
@@ -47,10 +58,17 @@ export interface MermaidOutApi {
   file: {
     open(): Promise<OpenResult>;
     read(path: string): Promise<OpenResult>;
+    readBinary(path: string): Promise<ReadBinaryResult>;
     save(path: string, content: string): Promise<SaveResult>;
     saveAs(suggestedName: string, content: string): Promise<SaveResult>;
     exportSvg(suggestedName: string, svg: string): Promise<SaveResult>;
-    exportPng(suggestedName: string, bytes: Uint8Array): Promise<SaveResult>;
+    exportPng(
+      suggestedName: string,
+      svg: string,
+      width: number,
+      height: number,
+      scale: number,
+    ): Promise<SaveResult>;
   };
   folder: {
     pick(): Promise<PickFolderResult>;

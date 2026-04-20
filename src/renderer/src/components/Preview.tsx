@@ -1,8 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 import { renderMermaid } from '../lib/mermaid-runtime';
 
+export interface ViewingImage {
+  kind: 'png' | 'svg';
+  path: string;
+  blobUrl: string;
+}
+
 interface Props {
   source: string;
+  viewingImage: ViewingImage | null;
   onRenderedElement: (svg: SVGSVGElement | null) => void;
   onStatusChange: (status: 'ok' | 'warn' | 'empty') => void;
 }
@@ -11,6 +18,7 @@ const DEBOUNCE_MS = 250;
 
 export function Preview({
   source,
+  viewingImage,
   onRenderedElement,
   onStatusChange,
 }: Props) {
@@ -20,6 +28,10 @@ export function Preview({
   const renderHostRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (viewingImage) {
+      // Pause live rendering while the user views an external image.
+      return;
+    }
     if (!source.trim()) {
       setLastSvg(null);
       setError(null);
@@ -46,9 +58,13 @@ export function Preview({
       cancelled = true;
       window.clearTimeout(handle);
     };
-  }, [source, onRenderedElement, onStatusChange]);
+  }, [source, viewingImage, onRenderedElement, onStatusChange]);
 
   useEffect(() => {
+    if (viewingImage) {
+      onRenderedElement(null);
+      return;
+    }
     const host = renderHostRef.current;
     if (!host) {
       onRenderedElement(null);
@@ -56,7 +72,21 @@ export function Preview({
     }
     const svg = host.querySelector('svg') as SVGSVGElement | null;
     onRenderedElement(svg);
-  }, [lastSvg, onRenderedElement]);
+  }, [lastSvg, viewingImage, onRenderedElement]);
+
+  if (viewingImage) {
+    return (
+      <div className="preview" ref={stageRef}>
+        <div className="preview__stage preview__stage--image">
+          <img
+            className="preview__image"
+            src={viewingImage.blobUrl}
+            alt={viewingImage.path}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="preview" ref={stageRef}>

@@ -1,26 +1,25 @@
 import { useMemo } from 'react';
-import type { MermaidFileEntry } from '../../../types/api';
+import type { FileEntry } from '../../../types/api';
 import { basename } from '../lib/file-state';
 
 interface Props {
   root: string | null;
-  files: MermaidFileEntry[];
+  files: FileEntry[];
   activePath: string | null;
   busy: boolean;
   onPickFolder: () => void;
   onRefresh: () => void;
-  onSelect: (entry: MermaidFileEntry) => void;
-  onClose: () => void;
+  onSelect: (entry: FileEntry) => void;
 }
 
 interface TreeFolder {
   name: string;
   path: string;
   folders: Map<string, TreeFolder>;
-  files: MermaidFileEntry[];
+  files: FileEntry[];
 }
 
-function buildTree(files: MermaidFileEntry[]): TreeFolder {
+function buildTree(files: FileEntry[]): TreeFolder {
   const root: TreeFolder = {
     name: '',
     path: '',
@@ -46,6 +45,12 @@ function buildTree(files: MermaidFileEntry[]): TreeFolder {
   return root;
 }
 
+function kindBadge(kind: FileEntry['kind']): string | null {
+  if (kind === 'png') return 'PNG';
+  if (kind === 'svg') return 'SVG';
+  return null;
+}
+
 function FolderNode({
   folder,
   depth,
@@ -55,7 +60,7 @@ function FolderNode({
   folder: TreeFolder;
   depth: number;
   activePath: string | null;
-  onSelect: (entry: MermaidFileEntry) => void;
+  onSelect: (entry: FileEntry) => void;
 }) {
   const folders = Array.from(folder.folders.values()).sort((a, b) =>
     a.name.localeCompare(b.name),
@@ -81,6 +86,7 @@ function FolderNode({
       ))}
       {folder.files.map((file) => {
         const active = file.path === activePath;
+        const badge = kindBadge(file.kind);
         return (
           <button
             key={file.path}
@@ -91,6 +97,7 @@ function FolderNode({
             title={file.path}
           >
             <span className="sidebar__filename">{file.name}</span>
+            {badge && <span className="sidebar__kind">{badge}</span>}
           </button>
         );
       })}
@@ -106,7 +113,6 @@ export function Sidebar({
   onPickFolder,
   onRefresh,
   onSelect,
-  onClose,
 }: Props) {
   const tree = useMemo(() => buildTree(files), [files]);
   const rootLabel = root ? basename(root) || root : 'No folder';
@@ -115,28 +121,6 @@ export function Sidebar({
     <aside className="sidebar">
       <header className="sidebar__header">
         <span className="pane__eyebrow">Files</span>
-        <button
-          type="button"
-          className="sidebar__hide"
-          onClick={onClose}
-          title="Hide sidebar (Ctrl/Cmd+B)"
-          aria-label="Hide sidebar"
-        >
-          <svg
-            viewBox="0 0 20 20"
-            width="14"
-            height="14"
-            aria-hidden="true"
-            focusable="false"
-          >
-            <path
-              d="M12 5 L7 10 L12 15"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.5"
-            />
-          </svg>
-        </button>
       </header>
       <div className="sidebar__toolbar">
         <button type="button" className="btn btn--xs" onClick={onPickFolder}>
@@ -157,7 +141,9 @@ export function Sidebar({
       <div className="sidebar__list">
         {files.length === 0 ? (
           <div className="sidebar__empty">
-            {root ? 'No .mmd files found' : 'Pick a folder to list .mmd files'}
+            {root
+              ? 'No .mmd / .svg / .png files found'
+              : 'Pick a folder to browse diagrams'}
           </div>
         ) : (
           <FolderNode
