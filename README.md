@@ -27,6 +27,19 @@ npm install
 npm run dev
 ```
 
+### Using pnpm
+
+pnpm ≥ 9 blocks install scripts by default, which prevents Electron's binary
+from being unpacked and triggers `Error: Electron uninstall` from
+electron-vite. The repo's `package.json` already lists `electron` under
+`pnpm.onlyBuiltDependencies`, and `.npmrc` pins `node-linker=hoisted` so
+electron-builder works without surprises. If you still see the error, run:
+
+```bash
+pnpm approve-builds       # interactively approve electron
+pnpm install --force      # (or: pnpm rebuild electron)
+```
+
 ## Build distributables
 
 ```bash
