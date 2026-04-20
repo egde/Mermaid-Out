@@ -1,0 +1,387 @@
+@import url('./tokens.css');
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink-90);
+  font-family: var(--font-mono);
+  font-size: var(--fs-body);
+  line-height: var(--lh-normal);
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+button {
+  font-family: inherit;
+}
+
+/* ============================================================
+   App shell
+   ============================================================ */
+
+.app {
+  display: grid;
+  grid-template-rows: 56px 1fr 24px;
+  grid-template-columns: 1fr;
+  height: 100vh;
+  min-height: 480px;
+}
+
+/* ============================================================
+   TopBar
+   ============================================================ */
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  padding: 0 var(--s-5);
+  border-bottom: 2px solid var(--ink);
+  background: var(--paper);
+  -webkit-app-region: drag;
+}
+
+.topbar__brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: var(--fw-bold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-size: var(--fs-small);
+  color: var(--ink);
+}
+
+.topbar__brand img {
+  height: 22px;
+}
+
+.topbar__doc {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-3);
+  padding-left: var(--s-4);
+  border-left: 1px solid var(--ink-15);
+  font-size: var(--fs-small);
+  color: var(--ink-70);
+  min-width: 0;
+}
+
+.topbar__docname {
+  color: var(--ink);
+  font-weight: var(--fw-semibold);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 420px;
+}
+
+.topbar__grow {
+  flex: 1;
+}
+
+.topbar__actions {
+  display: flex;
+  gap: var(--s-2);
+  -webkit-app-region: no-drag;
+}
+
+.platform-darwin .topbar {
+  padding-left: 84px;
+}
+
+/* ============================================================
+   Buttons
+   ============================================================ */
+
+.btn {
+  font: inherit;
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 7px 12px;
+  border: 1px solid var(--ink);
+  background: var(--paper);
+  color: var(--ink);
+  cursor: pointer;
+  transition: box-shadow var(--dur-fast) var(--ease),
+    transform var(--dur-fast) var(--ease);
+}
+
+.btn:hover {
+  border-width: 2px;
+  padding: 6px 11px;
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.btn:active {
+  transform: translate(1px, 1px);
+  box-shadow: none;
+}
+
+.btn--primary {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.btn--primary.btn--stamped {
+  box-shadow: 3px 3px 0 0 var(--ink);
+}
+
+.btn[disabled] {
+  border-style: dashed;
+  border-color: var(--ink-30);
+  color: var(--ink-50);
+  cursor: not-allowed;
+  background: var(--paper);
+}
+
+.btn[disabled]:hover {
+  border-width: 1px;
+  padding: 7px 12px;
+}
+
+/* ============================================================
+   Chip (status)
+   ============================================================ */
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: 2px 8px;
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-semibold);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  border: 1px solid var(--ink);
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.chip--ok {
+  border-color: var(--ok);
+  color: var(--ok);
+  background: var(--ok-tint);
+}
+
+.chip--warn {
+  border-color: var(--warn);
+  color: var(--warn);
+  background: var(--warn-tint);
+}
+
+.chip--err {
+  border-color: var(--err);
+  color: var(--err);
+  background: var(--err-tint);
+}
+
+/* ============================================================
+   Workspace (split editor + preview)
+   ============================================================ */
+
+.workspace {
+  display: grid;
+  grid-template-columns: var(--split, 1fr) 1px 1fr;
+  min-height: 0;
+  background: var(--paper);
+}
+
+.pane {
+  display: grid;
+  grid-template-rows: 32px 1fr;
+  min-height: 0;
+  min-width: 0;
+  background: var(--paper);
+}
+
+.pane__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--s-4);
+  border-bottom: 1px solid var(--ink);
+  background: var(--paper);
+}
+
+.pane__eyebrow {
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-semibold);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+  color: var(--ink-70);
+}
+
+.pane__headerchip {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+}
+
+.pane__body {
+  position: relative;
+  overflow: hidden;
+  min-width: 0;
+  min-height: 0;
+}
+
+.divider {
+  background: var(--ink);
+  cursor: col-resize;
+  position: relative;
+  user-select: none;
+}
+
+.divider::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -3px;
+  right: -3px;
+}
+
+/* ============================================================
+   Editor pane (Monaco host)
+   ============================================================ */
+
+.editor {
+  position: absolute;
+  inset: 0;
+}
+
+.editor .monaco-editor,
+.editor .monaco-editor-background,
+.editor .monaco-editor .margin {
+  background-color: var(--paper) !important;
+}
+
+/* ============================================================
+   Preview pane
+   ============================================================ */
+
+.preview {
+  position: absolute;
+  inset: 0;
+  overflow: auto;
+  padding: var(--s-5) var(--s-5) var(--s-7);
+  background: var(--paper);
+}
+
+.preview__stage {
+  position: relative;
+  min-height: 100%;
+}
+
+.preview__render {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.preview__render svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.preview__render--stale {
+  opacity: 0.25;
+  filter: grayscale(1);
+}
+
+.preview__error {
+  margin-bottom: var(--s-4);
+  border: 1px solid var(--warn);
+  background: var(--warn-tint);
+  padding: var(--s-3) var(--s-4);
+  color: var(--warn);
+  font-size: var(--fs-small);
+  line-height: var(--lh-normal);
+  white-space: pre-wrap;
+}
+
+.preview__error header {
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--tracking-wider);
+  text-transform: uppercase;
+  margin-bottom: var(--s-2);
+}
+
+.preview__empty {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  min-height: 300px;
+  color: var(--ink-50);
+  font-size: var(--fs-small);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+}
+
+/* ============================================================
+   Status bar
+   ============================================================ */
+
+.statusbar {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  padding: 0 var(--s-4);
+  font-size: var(--fs-caption);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--ink-70);
+  border-top: 1px solid var(--ink-15);
+  background: var(--paper);
+}
+
+.statusbar__sep {
+  color: var(--ink-30);
+}
+
+.statusbar__grow {
+  flex: 1;
+}
+
+.statusbar__path {
+  font-size: var(--fs-caption);
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--ink-90);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ============================================================
+   Dirty indicator
+   ============================================================ */
+
+.dirty-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  background: var(--ink);
+  margin-right: var(--s-2);
+  vertical-align: 1px;
+}

@@ -1,0 +1,27 @@
+appId: com.mermaidout.app
+productName: Mermaid-Out
+directories:
+  output: release
+  buildResources: resources
+files:
+  - out/**/*
+  - package.json
+asar: true
+mac:
+  category: public.app-category.developer-tools
+  target:
+    - target: dmg
+      arch:
+        - x64
+        - arm64
+  artifactName: ${productName}-${version}-${arch}.${ext}
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  artifactName: ${productName}-${version}-${arch}.${ext}
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  deleteAppDataOnUninstall: false

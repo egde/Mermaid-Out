@@ -1,0 +1,12 @@
+%% Sample mermaid diagram — Mermaid-Out
+sequenceDiagram
+    participant Client
+    participant Gateway
+    participant Scheduler
+    participant Worker
+    Client->>Gateway: POST /jobs
+    Gateway->>Scheduler: enqueue(job)
+    Scheduler->>Worker: dispatch(job)
+    Worker-->>Scheduler: ack
+    Scheduler-->>Gateway: 202 Accepted
+    Gateway-->>Client: 202 Accepted

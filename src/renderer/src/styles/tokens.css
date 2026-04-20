@@ -1,0 +1,248 @@
+/* ============================================================
+   Tech Template — Design Tokens
+   Black & white system for technical architecture slides.
+   ============================================================ */
+
+@import url('./fonts.css');
+
+:root {
+  /* -------------------------------------------
+     COLOR — NEUTRALS
+     Black primary, white background. Grays used
+     sparingly for secondary shapes and hierarchy.
+     ------------------------------------------- */
+  --ink:        #000000;   /* primary — text, bars, outlines */
+  --paper:      #FFFFFF;   /* canvas background */
+  --ink-90:     #1A1A1A;   /* near-black, body copy */
+  --ink-70:     #4D4D4D;   /* secondary text */
+  --ink-50:     #808080;   /* tertiary / muted */
+  --ink-30:     #B3B3B3;   /* dividers, de-emphasized bars */
+  --ink-15:     #D9D9D9;   /* hairlines, alt rows */
+  --ink-05:     #F2F2F2;   /* subtle surface fill */
+
+  /* -------------------------------------------
+     COLOR — SEMANTIC (reserved for states only)
+     Used for status indicators, callouts, and
+     chart highlights. Never decorative.
+     ------------------------------------------- */
+  --ok:         #0A7D2C;   /* success / positive */
+  --warn:       #B8860B;   /* warning / attention */
+  --err:        #B00020;   /* error / destructive */
+  --ok-tint:    #E8F4EC;
+  --warn-tint:  #FAF2DE;
+  --err-tint:   #F8E3E6;
+
+  /* -------------------------------------------
+     TYPE
+     One family: JetBrains Mono. Weight + size
+     carry hierarchy instead of multiple faces.
+     ------------------------------------------- */
+  --font-mono:  'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+  --fs-display:  56px;
+  --fs-h1:       40px;
+  --fs-h2:       28px;
+  --fs-h3:       20px;
+  --fs-body:     15px;
+  --fs-small:    13px;
+  --fs-caption:  11px;
+
+  --fw-regular:  400;
+  --fw-medium:   500;
+  --fw-semibold: 600;
+  --fw-bold:     700;
+  --fw-black:    800;
+
+  --lh-tight:    1.1;
+  --lh-snug:     1.25;
+  --lh-normal:   1.45;
+  --lh-loose:    1.6;
+
+  --tracking-tight:  -0.01em;
+  --tracking-normal:  0;
+  --tracking-wide:    0.04em;
+  --tracking-wider:   0.08em;   /* eyebrows, labels */
+
+  /* -------------------------------------------
+     SPACING — 4px base, 8px rhythm
+     ------------------------------------------- */
+  --s-0:  0;
+  --s-1:  4px;
+  --s-2:  8px;
+  --s-3:  12px;
+  --s-4:  16px;
+  --s-5:  24px;
+  --s-6:  32px;
+  --s-7:  48px;
+  --s-8:  64px;
+  --s-9:  96px;
+
+  /* -------------------------------------------
+     BORDER & RADII
+     Rectangular by default — radii are 0 or 2px.
+     Borders are solid, 1px or 2px ink.
+     ------------------------------------------- */
+  --r-0:  0px;
+  --r-1:  2px;         /* only for interactive affordance */
+
+  --bw-hair:   1px;
+  --bw-rule:   2px;    /* emphasized boxes / primary outlines */
+  --bw-heavy:  3px;    /* dividers between sections */
+
+  --border-default: var(--bw-hair) solid var(--ink);
+  --border-muted:   var(--bw-hair) solid var(--ink-30);
+  --border-rule:    var(--bw-rule) solid var(--ink);
+
+  /* -------------------------------------------
+     ELEVATION
+     No soft drop shadows. Use a hard offset or none.
+     ------------------------------------------- */
+  --shadow-none:  none;
+  --shadow-hard:  4px 4px 0 0 var(--ink);    /* stamped offset, ink on paper */
+  --shadow-hard-sm: 2px 2px 0 0 var(--ink);
+
+  /* -------------------------------------------
+     MOTION
+     Fast, linear/ease-out. No bounces.
+     ------------------------------------------- */
+  --ease:       cubic-bezier(0.2, 0, 0, 1);
+  --dur-fast:   90ms;
+  --dur-med:    180ms;
+  --dur-slow:   320ms;
+}
+
+/* ============================================================
+   SEMANTIC ELEMENT DEFAULTS
+   ============================================================ */
+
+html, body {
+  background: var(--paper);
+  color: var(--ink-90);
+  font-family: var(--font-mono);
+  font-size: var(--fs-body);
+  line-height: var(--lh-normal);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.display, h1.display {
+  font-size: var(--fs-display);
+  font-weight: var(--fw-bold);
+  line-height: var(--lh-tight);
+  letter-spacing: var(--tracking-tight);
+  color: var(--ink);
+}
+
+h1, .h1 {
+  font-size: var(--fs-h1);
+  font-weight: var(--fw-bold);
+  line-height: var(--lh-tight);
+  letter-spacing: var(--tracking-tight);
+  color: var(--ink);
+}
+
+h2, .h2 {
+  font-size: var(--fs-h2);
+  font-weight: var(--fw-semibold);
+  line-height: var(--lh-snug);
+  color: var(--ink);
+}
+
+h3, .h3 {
+  font-size: var(--fs-h3);
+  font-weight: var(--fw-semibold);
+  line-height: var(--lh-snug);
+  color: var(--ink);
+}
+
+p, .body {
+  font-size: var(--fs-body);
+  line-height: var(--lh-normal);
+  color: var(--ink-90);
+}
+
+.small     { font-size: var(--fs-small); }
+.caption   { font-size: var(--fs-caption); color: var(--ink-70); }
+
+/* Eyebrow / label — uppercase, wide tracking */
+.eyebrow, .label {
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-semibold);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+  color: var(--ink-70);
+}
+
+code, pre, .mono {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+}
+
+code {
+  background: var(--ink-05);
+  padding: 1px 6px;
+  border: var(--border-muted);
+}
+
+pre {
+  background: var(--paper);
+  border: var(--border-default);
+  padding: var(--s-4);
+  overflow-x: auto;
+}
+
+hr {
+  border: 0;
+  border-top: var(--border-rule);
+  margin: var(--s-6) 0;
+}
+
+/* ============================================================
+   UTILITY — boxes, the core primitive of the system
+   ============================================================ */
+
+.box {
+  border: var(--border-default);
+  background: var(--paper);
+  padding: var(--s-4);
+}
+
+.box--filled {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+}
+
+.box--muted {
+  border-color: var(--ink-30);
+  background: var(--paper);
+}
+
+.box--stamped {
+  box-shadow: var(--shadow-hard);
+}
+
+/* Secondary shapes are always outlined, never filled with gray */
+.outline {
+  border: var(--border-default);
+  background: var(--paper);
+  color: var(--ink);
+}
+
+/* Status chips */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: 2px 8px;
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-semibold);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  border: var(--border-default);
+  background: var(--paper);
+  color: var(--ink);
+}
+.chip--ok   { border-color: var(--ok);   color: var(--ok);   background: var(--ok-tint); }
+.chip--warn { border-color: var(--warn); color: var(--warn); background: var(--warn-tint); }
+.chip--err  { border-color: var(--err);  color: var(--err);  background: var(--err-tint); }
